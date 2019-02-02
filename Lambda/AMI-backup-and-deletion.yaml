@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: An AWS Serverless Specification template describing your function.
+Resources:
+  AMIbackupanddeletion:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: index.handler
+      Runtime: nodejs6.10
+      CodeUri: .
+      Description: ''
+      MemorySize: 512
+      Timeout: 300
+      Role: '' // paste your role arn here
+      Environment:
+        Variables:
+          tagName: YOUR_TAG_NAME
+          sourceEmailId: YOUR_SRC_EMAIL
+          CCEmailId: YOUR_CC_EMAIL_ID
+          destinationEmailId: YOUR_DESTINATION_EMAIL_ID
+          retentionType: minutes
+          retentionTime: '5'

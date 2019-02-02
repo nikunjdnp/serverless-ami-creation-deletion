@@ -1,0 +1,16 @@
+{
+  "name": "AMI-backup-and-deletion",
+  "version": "1.0.0",
+  "description": "This is a lambda function for AMI backup and clear older ones after retention period .",
+  "main": "index.js",
+  "scripts": {
+    "predeploy": "zip -r Lambda-Deployment.zip * -x *.zip *.json *.log"
+  },
+  "author": "Nikunj Prajapati",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^2.6.0",
+    "moment-timezone": "^0.5.16",
+    "underscore": "^1.9.0"
+  }
+}
