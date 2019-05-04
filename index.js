@@ -1,33 +1,48 @@
 'use strict'
 const async = require('async');
 const AWS = require('aws-sdk');
-let moment = require('moment-timezone');
-let ec2 = new AWS.EC2({
+const moment = require('moment-timezone');
+const ec2 = new AWS.EC2({
     region: 'us-east-1',
     apiVersion: '2016-11-15'
 });
-let ses = new AWS.SES({
+const ses = new AWS.SES({
     region: 'us-east-1',
     apiVersion: '2016-11-15'
 });
 
-const TagName = process.env.tagName;
-const SENDER_EMAIL_ID = process.env.sourceEmailId; //Enter Source email address..
-const CC_EMAIL_IDS = [process.env.CCEmailId]; //Enter cc email ids..
-const TO_EMAIL_IDS = [process.env.destinationEmailId]; //enter recipient email ids..
+const TagName = process.env.tagName; //Specify the tagName(Ex. 'BackupNode').
+const SENDER_EMAIL_ID = process.env.sourceEmailId; //Specify the sender email address.
+const CC_EMAIL_IDS = [process.env.CCEmailId]; //Specify the cc email ids.
+const TO_EMAIL_IDS = [process.env.destinationEmailId]; //Specify the recipient email ids.
 
-//Key - years,quarters,months,weeks,days,hours,minutes,seconds,milliseconds
+/**
+ * Note: Make sure the email ids have been verified from AWS SES services, else you can't send the mail on the specified email ids.
+ */
+
+/**
+ * @description Specify the retention time type for the AMIs.  It can be year, quarters,months, week, days, hours, minutes, seconds, milliseconds.
+ * @example RETENTION_TYPE = 'minutes'
+ */
 const RETENTION_TYPE = process.env.retentionType; // IF you wish year then find from the below keyword and place it. 
 
-const RETENTION_TIME = process.env.retentionTime;
-//For more information see https://momentjs.com/docs/#/manipulating/add/
+/**
+ * @description Specify the retention time for the AMIs. After how much time, the AMIs should be deleted. It is the expiry period of the AMIs.
+ * @example RETENTION_TIME = '15'  //It means 15 minutes (retention_time + retention_type).
+ * https://momentjs.com/docs/#/manipulating/add/
+ */
 
-var TotalOperationForEc2 = [],
-    TotalOperationForAMIDelete = [];
+const RETENTION_TIME = process.env.retentionTime;
 
 exports.handler = (event, context, callback) => {
+    let TotalOperationForEc2 = [], TotalOperationForAMIDelete = [];
+
     async.waterfall([
-        //fetch ec2 instances whose tagName is matched
+        /**
+         * @param {Object} done
+         * @description Fetch those ec2 instances, which have tag `BackupNode : True` and the instances are either stopped or in running state. 
+         * @returns Array object of ec2 instances
+         */
         function (done) {
             let params = {
                 Filters: [{
@@ -48,8 +63,16 @@ exports.handler = (event, context, callback) => {
                 }
             });
         },
-        //create AMI for instances and tag with retention period 
-        function (instances, done) {
+        
+        /**
+         * 
+         * @param {Object} instances 
+         * @param {Function} done 
+         * @description This function will create AMI & Snapshot of each instances and tag them with new tag like `isExpireOn : 1567364744744`.
+         * @returns Callback function
+         */
+        
+         function (instances, done) {
             console.log('Number of instances ::', instances.Reservations[0].Instances.length);
             if (instances) {
                 async.map(instances.Reservations[0].Instances, (instance, done1) => {
@@ -99,7 +122,6 @@ exports.handler = (event, context, callback) => {
                     });
                 }, (err, result) => {
                     if (err) {
-                        console.log("Err :: ", err);
                         done(err, null);
                     }
                     else {
@@ -108,10 +130,15 @@ exports.handler = (event, context, callback) => {
                 });
             }
             else {
-                done(null, 'Device not found!');
+                done(null, 'Instances not found!');
             }
         },
-        //fetching AMI which tagName is matched
+        /**
+         * @param {Object} forami 
+         * @param {Function} done
+         * @description This function will fetch the AMI from the AMI list, which have tag like `BackupNode : True`.
+         * @returns Callback function 
+         */
         function (forami, done) {
             let params = {
                 Filters: [{
@@ -132,6 +159,13 @@ exports.handler = (event, context, callback) => {
 
         },
         //fetch AMI which are elidgible to delete
+        /**
+         * 
+         * @param {Array} images 
+         * @param {Function} done
+         * @description This function will fetch the total AMIs from your account which have tag and deregister the AMIs, if current time > retention time.
+         *  It will also delete the snapshots, which are attached with the AMIs. 
+         */
         function (images, done) {
             console.log('Fetching total AMI from your account(only owned by you)...');
             console.log('Total AMIs :', images.Images.length);
@@ -183,7 +217,7 @@ exports.handler = (event, context, callback) => {
                     }
                 }
                 else {
-                    console.log('Not found any image!');
+                    console.log('Not found any AMI!');
                     done1(null, null);
                 }
             }, (err, result) => {
@@ -221,6 +255,14 @@ exports.handler = (event, context, callback) => {
 
 };
 
+/**
+ * @param {String} subject 
+ * @param {String} senderId 
+ * @param {Array} to 
+ * @param {Array} Cc 
+ * @param {String} messageContent
+ * @description This function will send a report of the script as an email. 
+ */
 var sendEmail = function (subject, senderId, to, Cc, messageContent) {
 
     ses.sendEmail({
