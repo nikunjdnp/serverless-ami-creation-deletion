@@ -158,9 +158,8 @@ exports.handler = (event, context, callback) => {
             });
 
         },
-        //fetch AMI which are elidgible to delete
+
         /**
-         * 
          * @param {Array} images 
          * @param {Function} done
          * @description This function will fetch the total AMIs from your account which have tag and deregister the AMIs, if current time > retention time.
@@ -212,7 +211,6 @@ exports.handler = (event, context, callback) => {
                         });
                     }
                     else {
-                        //console.log("Do not need to delete any image!");
                         done1(null, null);
                     }
                 }
@@ -247,7 +245,6 @@ exports.handler = (event, context, callback) => {
                 "Ami deletion result ->  " + JSON.stringify(TotalOperationForAMIDelete) + " , \n" +
                 "\n \n " +
                 "Thanks";
-            //send email    
             sendEmail("AMI automation script report!", SENDER_EMAIL_ID, TO_EMAIL_IDS, CC_EMAIL_IDS, message);
             callback(null, FinalDone);
         }
