@@ -35,7 +35,7 @@ const RETENTION_TYPE = process.env.retentionType; // IF you wish year then find 
 const RETENTION_TIME = process.env.retentionTime;
 
 exports.handler = (event, context, callback) => {
-    let TotalOperationForEc2 = [], TotalOperationForAMIDelete = [];
+    var TotalOperationForEc2 = [], TotalOperationForAMIDelete = [];
 
     async.waterfall([
         /**
@@ -73,14 +73,15 @@ exports.handler = (event, context, callback) => {
          */
         
          function (instances, done) {
-            console.log('Number of instances ::', instances.Reservations[0].Instances.length);
-            if (instances) {
-                async.map(instances.Reservations[0].Instances, (instance, done1) => {
-                    console.log('Creating Image for ::', instance.InstanceId);
+            console.log('Number of instances ::', instances.Reservations);
+            if (instances && instances.Reservations.length > 0) {
+                async.map(instances.Reservations, (instance, done1) => {
+                    var instanceId = instance.Instances[0].InstanceId;
+                    console.log('Creating Image for ::', instanceId);
                     let params = {
-                        InstanceId: instance.InstanceId,
-                        Name: 'AMI_' + instance.InstanceId + '_' + moment.tz(new Date(), "Asia/Kolkata").add(RETENTION_TIME, RETENTION_TYPE).valueOf().toString(),
-                        Description: 'This is an AMI of ' + instance.InstanceId + '. Created on : ' + new Date().getTime(),
+                        InstanceId: instanceId,
+                        Name: 'AMI_' + instanceId + '_' + moment.tz(new Date(), "Asia/Kolkata").add(RETENTION_TIME, RETENTION_TYPE).valueOf().toString(),
+                        Description: 'This is an AMI of ' + instanceId + '. Created on : ' + new Date().getTime(),
                         NoReboot: false
                     };
                     ec2.createImage(params, function (err, data) {
@@ -91,10 +92,10 @@ exports.handler = (event, context, callback) => {
                         else {
                             let Tags = [];
                             let instanceInfo = {};
-                            instanceInfo['InstanceId'] = instance.InstanceId;
+                            instanceInfo['InstanceId'] = instanceId;
                             instanceInfo['ImageId'] = data.ImageId;
                             TotalOperationForEc2.push(instanceInfo);
-                            let imageTags = instance.Tags;
+                            let imageTags = instance.Instances[0].Tags;
                             imageTags.forEach(element => {
                                 if (element.Key.indexOf("aws:", 0) == -1) {
                                     Tags.push(element);
