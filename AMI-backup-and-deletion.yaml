@@ -11,7 +11,7 @@ Resources:
       Description: ''
       MemorySize: 512
       Timeout: 300
-      Role: '' // paste your role arn here
+      Role: '' // paste your aws IAM role arn here
       Environment:
         Variables:
           tagName: YOUR_TAG_NAME
