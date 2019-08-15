@@ -2,12 +2,14 @@
 const async = require('async');
 const AWS = require('aws-sdk');
 const moment = require('moment-timezone');
+const AWSRegionName = 'us-east-1';
+
 const ec2 = new AWS.EC2({
-    region: 'us-east-1',
-    apiVersion: '2016-11-15'
+    region: AWSRegionName,
+    apiVersion: '2016-11-15' 
 });
 const ses = new AWS.SES({
-    region: 'us-east-1',
+    region: AWSRegionName,
     apiVersion: '2016-11-15'
 });
 
