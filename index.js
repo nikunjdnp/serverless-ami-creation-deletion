@@ -65,6 +65,40 @@ exports.handler = (event, context, callback) => {
                 }
             });
         },
+        /**
+         * 
+         * @param {Object} instances 
+         * @param {Function} done 
+         * @description This function will count the number of ec2 instances.
+         * @returns Callback function
+         */
+        
+        function (instances, done) {
+            console.log('Calculating number of instances...');
+            if (instances && instances.Reservations.length > 0) {
+                var ec2Instances = [];
+                async.map(instances.Reservations, (instance, done1) => {
+                    if(instance.Instances.length > 1){
+                        instance.Instances.map((instanceData)=>{
+                            ec2Instances.push(instanceData); 
+                        });
+                        done1(null, [...ec2Instances]);
+                    } else{
+                        done1(null,instance.Instances[0]);
+                    }
+                }, (err, result) => {
+                    if (err) {
+                        done(err, null);
+                    }
+                    else {
+                        done(null, result);
+                    }
+                });
+            }
+            else {
+                done(null, 'Instances not found!');
+            }
+        },
         
         /**
          * 
@@ -75,10 +109,11 @@ exports.handler = (event, context, callback) => {
          */
         
          function (instances, done) {
-            console.log('Number of instances ::', instances.Reservations);
-            if (instances && instances.Reservations.length > 0) {
-                async.map(instances.Reservations, (instance, done1) => {
-                    var instanceId = instance.Instances[0].InstanceId;
+            instances = [].concat.apply([], instances);
+            console.log('Number of instances ::', instances.length);
+            if (instances && instances.length > 0) {
+                async.map(instances, (instance, done1) => {
+                    var instanceId = instance.InstanceId;
                     console.log('Creating Image for ::', instanceId);
                     let params = {
                         InstanceId: instanceId,
@@ -97,7 +132,7 @@ exports.handler = (event, context, callback) => {
                             instanceInfo['InstanceId'] = instanceId;
                             instanceInfo['ImageId'] = data.ImageId;
                             TotalOperationForEc2.push(instanceInfo);
-                            let imageTags = instance.Instances[0].Tags;
+                            let imageTags = instance.Tags;
                             imageTags.forEach(element => {
                                 if (element.Key.indexOf("aws:", 0) == -1) {
                                     Tags.push(element);
