@@ -9,8 +9,8 @@
   "author": "Nikunj Prajapati",
   "license": "ISC",
   "dependencies": {
+    "moment-timezone": "^0.5.35",
     "async": "^2.6.4",
-    "moment-timezone": "^0.5.16",
     "underscore": "^1.13.1"
   }
 }
